@@ -1,0 +1,16 @@
+rSollDicke
+rTolPos
+rTolNeg
+rMessung_StartPos
+rMessung_EndPos
+rNettoBreite
+rNettoBreite_Start
+rNettoBreite_End
+rBruttoBreite
+rBruttoBreite_Start
+rBruttoBreite_End
+rKalibrierungswert
+rDicke_Corrwert
+rKalibrierungspos
+rSollzeit_Linienmessung
+rPos_Linienmessung
