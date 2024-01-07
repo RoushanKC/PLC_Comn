@@ -60,7 +60,6 @@ offset_map=[
 {"address":896,"name":"rKalibrierungspos","type":"Real"},
 {"address":928,"name":"rSollzeit_Linienmessung","type":"Real"},
 {"address":960,"name":"rPos_Linienmessung","type":"Real"},
-
 ]
     
 

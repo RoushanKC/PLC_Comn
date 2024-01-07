@@ -3,6 +3,7 @@ import time
 import collections
 import struct
 from PLC_Comn.Data_maps import type_dict ,offset_map ,format_map
+import Data_classes
 
 class Packet:
     def __init__(self ,timestamp ,data):
@@ -68,7 +69,8 @@ class Connection(Packet):
                     timestamp=time.time()
                     packet=Packet(timestamp ,data)
                     data_map=self.decode(packet)
-                    notify(data_map)
+                    data_class=Data_classes.Data_class(data_map)
+                    #notify(event,data_class)
             except socket.timeout:
                 print("implement-log")
                 self.connection_handling(self)

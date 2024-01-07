@@ -47,4 +47,4 @@ rKalibrierungswert
 rDicke_Corrwert
 rKalibrierungspos
 rSollzeit_Linienmessung
-rPos_Linienmessung
+rPos_Linienmessun
