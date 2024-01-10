@@ -2,30 +2,37 @@ import socket
 import time
 import collections
 import struct
-from PLC_Comn.Data_maps import type_dict ,offset_map ,format_map
-import Data_classes
+from Data_maps import type_dict ,offset_map ,format_map
+from Dataclass import Data_class
 
+# this is our abstraction of data buffer
 class Packet:
     def __init__(self ,timestamp ,data):
         self.timestamp=timestamp
         self.data=data
 
+# this class communicate with plc controller
 class Connection(Packet):
-    def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate):
+    #instansiation of connection class
+    def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate ,event_manager):
         self.host=host
         self.port=port
         self.packet_size=packet_size
         self.timeout=timeout
         self.refresh_rate=refresh_rate
+        self.event_manager=event_manager
     
+    # returns the packet
     def return_packet(Packet):
         return Packet
     
+    #establish a socket
     def establish_connection(self):
         self.client=socket.socket(socket.AF_INET ,socket.SOCK_STREAM)
         self.client.connect((self.host ,self.port))
         socket.setdefaulttimeout(self.timeout)
     
+    # handling of socket in case of failures
     def connection_handling(self):
         print("log connection timeout ,timestamp :" ,time.time())
         retry_interval=self.timeout
@@ -39,10 +46,12 @@ class Connection(Packet):
                 print("log required")
                 time.sleep(retry_interval)
                 retry_interval*=2
-        
+    
+    #alive bit implementation is pending ,need to toggle and keep track
     def Alive_bit():
         pass
     
+    #decoder decode the data buffer recieved from plc and return decoded data
     def decode(packet):
         parsed_data={}
         data=packet.data
@@ -57,6 +66,11 @@ class Connection(Packet):
             parsed_data[name]=value
         return parsed_data
  
+    #this add changes to data_class
+    def notify(self ,data_map):
+        Data_class(data_map)
+    
+    # establish connection ,recieve data then decode it then notify to data class   
     def receive(self):
         self.establish_connection()
         self.client.sendall(b'11')
@@ -69,8 +83,8 @@ class Connection(Packet):
                     timestamp=time.time()
                     packet=Packet(timestamp ,data)
                     data_map=self.decode(packet)
-                    data_class=Data_classes.Data_class(data_map)
-                    #notify(event,data_class)
+                    #data_class=Data_classes.Data_class(data_map)
+                    self.notify(data_map) #this is a callback to singleton Data_class class
             except socket.timeout:
                 print("implement-log")
                 self.connection_handling(self)
