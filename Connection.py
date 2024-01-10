@@ -2,8 +2,9 @@ import socket
 import time
 import collections
 import struct
+import queue
 from Data_maps import type_dict ,offset_map ,format_map
-from Dataclass import Data_class
+from Event_manager import Event_manager
 
 # this is our abstraction of data buffer
 class Packet:
@@ -13,6 +14,7 @@ class Packet:
 
 # this class communicate with plc controller
 class Connection(Packet):
+    send_queue=queue()
     #instansiation of connection class
     def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate ,event_manager):
         self.host=host
@@ -65,10 +67,20 @@ class Connection(Packet):
             value=struct.unpack(">"+format_char ,temp_data)[0]
             parsed_data[name]=value
         return parsed_data
- 
-    #this add changes to data_class
-    def notify(self ,data_map):
-        Data_class(data_map)
+    
+    def encode(data):
+        #make data map for send packet
+        #iterate data_map to pack data into b stream
+        #return b stream
+        pass
+    
+    def send_data(self):
+        while True:
+            if not self.send_queue.empty():
+                data=self.send_queue.get()
+                data_stream=self.encode(data)
+                self.client.sendall(data_stream)
+        
     
     # establish connection ,recieve data then decode it then notify to data class   
     def receive(self):
@@ -84,11 +96,15 @@ class Connection(Packet):
                     packet=Packet(timestamp ,data)
                     data_map=self.decode(packet)
                     #data_class=Data_classes.Data_class(data_map)
-                    self.notify(data_map) #this is a callback to singleton Data_class class
+                    em=Event_manager()
+                    em.notify(data_map) #this is a callback to singleton Data_class class
             except socket.timeout:
                 print("implement-log")
                 self.connection_handling(self)
             time.sleep(self.refresh_rate)
+            
+#create function to run both receive and send on two different threads.
+
                     
 
         
