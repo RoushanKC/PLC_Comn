@@ -2,8 +2,9 @@ import socket
 import time
 import collections
 import struct
-from Data_maps import type_dict ,offset_map ,format_map
-from Dataclass import Data_class
+import queue
+from Data_maps import type_dict ,receive_offset_map ,send_offset_map,format_map ,format_map_pack
+from Event_manager import Event_manager
 
 # this is our abstraction of data buffer
 class Packet:
@@ -13,7 +14,7 @@ class Packet:
 
 # this class communicate with plc controller
 class Connection(Packet):
-    #instansiation of connection class
+    #instantiation of connection class
     def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate ,event_manager):
         self.host=host
         self.port=port
@@ -55,7 +56,7 @@ class Connection(Packet):
     def decode(packet):
         parsed_data={}
         data=packet.data
-        for items in offset_map:
+        for items in receive_offset_map:
             addr=items["address"]
             name=items["name"]
             type=items["type"]
@@ -65,10 +66,20 @@ class Connection(Packet):
             value=struct.unpack(">"+format_char ,temp_data)[0]
             parsed_data[name]=value
         return parsed_data
- 
-    #this add changes to data_class
-    def notify(self ,data_map):
-        Data_class(data_map)
+    
+    def encode(data):
+        #make data map for send packet
+        #iterate data_map to pack data into b stream
+        #return b stream
+        byte_ar=b""
+        for item in receive_offset_map:
+            name=item["name"]
+            value=data[name]
+            type_str=item["type"]
+            format_spec=format_map_pack[type_str]
+            byte_ar+=struct.pack(format_spec ,value)
+            
+        return byte_ar
     
     # establish connection ,recieve data then decode it then notify to data class   
     def receive(self):
@@ -84,11 +95,15 @@ class Connection(Packet):
                     packet=Packet(timestamp ,data)
                     data_map=self.decode(packet)
                     #data_class=Data_classes.Data_class(data_map)
-                    self.notify(data_map) #this is a callback to singleton Data_class class
+                    em=Event_manager()
+                    em.notify_update_queue(data_map) #this is a callback to singleton Data_class class
             except socket.timeout:
                 print("implement-log")
                 self.connection_handling(self)
             time.sleep(self.refresh_rate)
+            
+#create function to run both receive and send on two different threads.
+
                     
 
         

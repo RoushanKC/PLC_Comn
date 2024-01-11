@@ -1,4 +1,4 @@
-from dataclasses import dataclass ,field
+from dataclasses import dataclass
 
 #currently flexibleInt is not used but commented for reusebility
 '''
@@ -52,24 +52,40 @@ class Data_class:
     xReserve3 : bool = False
     xAL_1 :bytearray = bytearray(2)
     xAL_2 : bytearray = bytearray(2)
-    rAktPos_Sensor = float =0.0
+    rAktPos_Sensor = float = 0.0
+    xResetAlarm: bool = False
+    xRolleWechseln: bool = False
+    
     
     #private class variable
     _instance=None
+    _publish_all=True
+    #constructor calling singleton
+    @staticmethod
+    def getInstance():
+        if Data_class._instance==None:
+            Data_class()
+        return Data_class._instance
     
+    def __init__(self):
+        if Data_class._instance!=None:
+            print("use getInstance method for initialization")
+        else : Data_class._instance=self
+    '''
     #memory allocater
-    def __new__(cls ,data_maps=None):
+    def __new__(cls):
         if(cls._instance is None):
             cls._instance=super(Data_class ,cls).__new__(cls)
         return cls._instance
     
     #object initialization while insuring it is singleton
+    
     def __init__(self ,data_maps: dict = None):
         if data_maps is not None:    
             for key ,value in data_maps.items():
                 setattr(self ,key ,value)
         # later we would like to do initialization where if the instance is called for the first time it will instansiate like this otherwise we would like to call a 1 args constructor inside a 2 args constructor where defalt values will be prev timestamp values of PLC.
-    
+    '''
     # data class setter ,setattr method wraper class
     def set_value(self ,key ,value):
         setattr(self ,key ,value)
@@ -82,7 +98,9 @@ class Data_class:
     # this method will run on thread ,main method of data class that will publish data   
     def update(self ,key ,value ,event_manager):
         _key ,_value=self.get_key_value(key)
-        if(_value !=value):
+        if(_value !=value or self._publish_all==True):
+            if self._publish_all==True:
+                self._publish_all=False
             self.set_values(key ,value)
             event=key
             event_manager.publish(event ,(key ,value))
