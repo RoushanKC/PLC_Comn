@@ -52,7 +52,10 @@ class Data_class:
     xReserve3 : bool = False
     xAL_1 :bytearray = bytearray(2)
     xAL_2 : bytearray = bytearray(2)
-    rAktPos_Sensor = float =0.0
+    rAktPos_Sensor = float = 0.0
+    xResetAlarm: bool = False
+    xRolleWechseln: bool = False
+    
     
     #private class variable
     _instance=None
