@@ -1,8 +1,8 @@
 import socket
 import time
-import collections
+#import collections
 import struct
-import queue
+#import queue
 from Data_maps import type_dict ,receive_offset_map ,send_offset_map,format_map ,format_map_pack
 from Event_manager import Event_manager
 
@@ -65,6 +65,7 @@ class Connection(Packet):
             temp_data=data[addr:addr+offset_len]
             value=struct.unpack(">"+format_char ,temp_data)[0]
             parsed_data[name]=value
+        parsed_data['dTimestamp']=packet.timestamp
         return parsed_data
     
     def encode(data):
@@ -95,6 +96,8 @@ class Connection(Packet):
                     packet=Packet(timestamp ,data)
                     data_map=self.decode(packet)
                     #data_class=Data_classes.Data_class(data_map)
+                    #log
+                    print(data_map)
                     em=Event_manager()
                     em.notify_update_queue(data_map) #this is a callback to singleton Data_class class
             except socket.timeout:

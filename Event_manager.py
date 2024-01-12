@@ -15,8 +15,7 @@ class Event_manager:
     
     def __init__(self):
         self.event_callbacks={} #key=event ,value =list of callbacks
-        self.update_queue=queue.Queue()  #queue for sending data to frontend
-        self.send_queue=queue.Queue(maxsize=1) #queue for sending to PLC
+
     
     def subscribe(self ,event ,callback):
         if event not in self.event_callbacks:

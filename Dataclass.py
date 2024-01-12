@@ -1,4 +1,5 @@
-from dataclasses import dataclass
+import datetime
+from dataclasses import dataclass   #external dependency if <Py 3.6
 
 #currently flexibleInt is not used but commented for reusebility
 '''
@@ -24,6 +25,7 @@ class FlexibleInt:
 @dataclass
 class Data_class:
     #data members as per sheet provided by SBI
+    dTimestamp : datetime = 0
     xAlive : bool = False
     xRemote : bool = False
     xReserve1 :bool = False
