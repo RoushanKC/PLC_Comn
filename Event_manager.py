@@ -3,6 +3,7 @@ import threading
 from Dataclass import Data_class
 from Connection import Connection
 from Data_maps import send_offset_map
+from Shared_data import Shared_data
 
 
 class Event_manager:
@@ -53,8 +54,8 @@ class Event_manager:
         self.send_queue.put(data)
             
     #this should be used by entity who want to send data to Frontend
-    def notify_update_queue(self ,data_map):
-        self.update_queue.put(data_map)
+    #def notify_update_queue(self ,data_map):
+    #    self.update_queue.put(data_map)
     
     #this method send data to PLC ,it will check data in send_queue ,
     #wrap data as per current system state ,convert data to b stream and send it to PLC
@@ -70,9 +71,10 @@ class Event_manager:
                     
     #event manager loop ,publish data with enabled delta encoding.   
     def em_loop(self):
+        data_class=Data_class.getInstance()
+        shared_data=Shared_data()
         while True:
-            data_class=Data_class.getInstance()
-            data_map=self.update_queue.get()
+            data_map=shared_data.update_queue.get()
             for key ,value in data_map.items():
                 data_class.update(key ,value ,self)
     

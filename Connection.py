@@ -4,7 +4,7 @@ import time
 import struct
 #import queue
 from Data_maps import type_dict ,receive_offset_map ,send_offset_map,format_map ,format_map_pack
-from Event_manager import Event_manager
+from Shared_data import Shared_data
 
 # this is our abstraction of data buffer
 class Packet:
@@ -15,13 +15,13 @@ class Packet:
 # this class communicate with plc controller
 class Connection(Packet):
     #instantiation of connection class
-    def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate ,event_manager):
+    def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate ,sh):
         self.host=host
         self.port=port
         self.packet_size=packet_size
         self.timeout=timeout
         self.refresh_rate=refresh_rate
-        self.event_manager=event_manager
+        self.sh=sh
     
     # returns the packet
     def return_packet(Packet):
@@ -98,8 +98,7 @@ class Connection(Packet):
                     #data_class=Data_classes.Data_class(data_map)
                     #log
                     print(data_map)
-                    em=Event_manager()
-                    em.notify_update_queue(data_map) #this is a callback to singleton Data_class class
+                    self.sh.notify_update_queue(data_map) #this is a callback to singleton Data_class class
             except socket.timeout:
                 print("implement-log")
                 self.connection_handling(self)
