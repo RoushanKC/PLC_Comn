@@ -13,7 +13,7 @@ if __name__=='__main__':
     port=2000
     sh=Shared_data()
     conn=Connection.Connection(host ,port ,5740 ,2,1,sh)
-    thread1=threading.Thread(target=Connection.receive())
+    thread1=threading.Thread(target=conn.receive())
     thread1.start()
     while True:
         q=sh.update_queue.get()

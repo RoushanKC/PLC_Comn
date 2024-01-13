@@ -3,8 +3,7 @@ import time
 #import collections
 import struct
 #import queue
-from Data_maps import type_dict ,receive_offset_map ,send_offset_map,format_map ,format_map_pack
-from Shared_data import Shared_data
+from Data_maps import type_dict ,receive_offset_map ,send_offset_map,format_map
 
 # this is our abstraction of data buffer
 class Packet:
@@ -53,31 +52,57 @@ class Connection(Packet):
         pass
     
     #decoder decode the data buffer recieved from plc and return decoded data
-    def decode(packet):
+    def decode(self ,dataP):
         parsed_data={}
-        data=packet.data
+        packet=dataP.data
         for items in receive_offset_map:
             addr=items["address"]
+            addr=int(addr/8)
             name=items["name"]
-            type=items["type"]
-            offset_len=type_dict[type]
-            format_char=format_map[type]
-            temp_data=data[addr:addr+offset_len]
-            value=struct.unpack(">"+format_char ,temp_data)[0]
-            parsed_data[name]=value
-        parsed_data['dTimestamp']=packet.timestamp
+            typeF=items["type"]
+            offset_len=type_dict[typeF]
+            decode_format=format_map[typeF]
+            if addr==0:
+                #bit manup impl
+                pass
+            elif addr==30:
+                #bit manup impl
+                pass
+            elif(addr==694):
+                bolt_arr=[]
+                for i in range(206):
+                    bolt_addr=addr+(i*4)
+                    tdata=packet[bolt_addr : bolt_addr+offset_len]
+                    if(len(tdata)==offset_len):
+                        value=struct.unpack(decode_format ,tdata)
+                    bolt_arr.append(value)
+                parsed_data[name]=bolt_arr
+            elif(addr==1540):
+                pos_arr=[]
+                for i in range(1050):
+                    pos_addr=addr+(i*4)
+                    tdata=packet[pos_addr : pos_addr+offset_len]
+                    if(len(tdata)==offset_len):
+                        value=struct.unpack(decode_format ,tdata)
+                    pos_arr.append(value)
+                parsed_data[name]=pos_arr
+            else:
+                tdata=packet[addr : addr+offset_len]
+                if(len(tdata)==offset_len):
+                    value=struct.unpack(decode_format ,tdata)
+                    parsed_data[name]=value
         return parsed_data
     
-    def encode(data):
+    def encode(self ,data):
         #make data map for send packet
         #iterate data_map to pack data into b stream
         #return b stream
         byte_ar=b""
-        for item in receive_offset_map:
+        for item in send_offset_map:
             name=item["name"]
             value=data[name]
             type_str=item["type"]
-            format_spec=format_map_pack[type_str]
+            format_spec=format_map[type_str]
             byte_ar+=struct.pack(format_spec ,value)
             
         return byte_ar
@@ -89,8 +114,10 @@ class Connection(Packet):
         while True:
             try:
                 data=self.client.recv(self.packet_size)
+                print(len(data))
                 if not data:
                     print("log function implementation!")
+                    self.client.close()
                 else:
                     timestamp=time.time()
                     packet=Packet(timestamp ,data)
