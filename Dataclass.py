@@ -61,7 +61,7 @@ class Data_class:
     
     #private class variable
     _instance=None
-    _publish_all=True
+   # _publish_all=True
     #constructor calling singleton
     @staticmethod
     def getInstance():
@@ -88,15 +88,20 @@ class Data_class:
                 setattr(self ,key ,value)
         # later we would like to do initialization where if the instance is called for the first time it will instansiate like this otherwise we would like to call a 1 args constructor inside a 2 args constructor where defalt values will be prev timestamp values of PLC.
     '''
+    def __getattr__(self, name):
+        return None
     # data class setter ,setattr method wraper class
     def set_value(self ,key ,value):
+        if not hasattr(self ,key):
+            print("inserted new data member :" ,key)
         setattr(self ,key ,value)
     
     # data class getter .getattr method wraper class
     def get_key_value(self ,key):
         value =getattr(self ,key)
         return key ,value
-     
+
+'''
     # this method will run on thread ,main method of data class that will publish data   
     def update(self ,key ,value ,event_manager):
         _key ,_value=self.get_key_value(key)
@@ -106,6 +111,7 @@ class Data_class:
             self.set_values(key ,value)
             event=key
             event_manager.publish(event ,(key ,value))
+'''
     
         
             

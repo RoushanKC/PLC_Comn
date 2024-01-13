@@ -1,17 +1,20 @@
 import queue
 import threading
-from Dataclass import Data_class
-from Connection import Connection
 from Data_maps import send_offset_map
-from Shared_data import Shared_data
 
 
 class Event_manager:
     _instance=None
-    
-    def __new__(cls):
+    coreEngine=None
+    conn=None
+    shared_data=None
+    _publish_all=True
+    def __new__(cls ,data_class ,connection ,sd):
         if cls._instance is None:
             cls._instance=super(Event_manager ,cls).__new__(cls)
+            cls.coreEngine=data_class
+            cls.conn=connection
+            cls.shared_data=sd
         return cls._instance
     
     def __init__(self):
@@ -40,12 +43,16 @@ class Event_manager:
      
             
     #this method fetch dictionary from data_class as per offset provided.
-    def fetch_DataClass(offset_map):
+    def fetch_DataClass(self ,offset_map):
         fetch_dict={}
-        dataclass=Data_class.getInstance()
+        dataclass=self.coreEngine.getInstance()
         for item in offset_map:
             key=item["name"]
+            if(key=="raktDicke_Pos"):
+                break
             _key ,val=dataclass.get_key_value(key)
+            if val==None:
+                continue
             fetch_dict[key]=val
         return fetch_dict
     
@@ -66,17 +73,30 @@ class Event_manager:
                 all_data=self.fetch_DataClass(send_offset_map)
                 for key ,val in data.items():
                     all_data[key]=val
-                b_stream=Connection.encode(all_data)
-                Connection.client.sendall(b_stream)
+                b_stream=self.conn.encode(all_data)
+                self.conn.client.sendall(b_stream)
                     
     #event manager loop ,publish data with enabled delta encoding.   
     def em_loop(self):
-        data_class=Data_class.getInstance()
-        shared_data=Shared_data()
+        coreE=self.coreEngine.getInstance()
+        #shared_data=Shared_data()
         while True:
-            data_map=shared_data.update_queue.get()
+            data_map=self.shared_data.update_queue.get()
             for key ,value in data_map.items():
-                data_class.update(key ,value ,self)
+                if(key=="rAktDicke_Bolzen"):
+                    data={key ,value}
+                    self.publish(key ,data)
+                elif(key=="raktDicke_Pos"):
+                    data={key ,value}
+                    self.publish(key ,data)
+                else:
+                    _key ,_val=coreE.get_key_value(key)
+                    if (self._publish_all==True or value!=_val or _val==None):
+                        coreE.set_value(key ,value)
+                        data={key ,value}
+                        self.publish(key ,data)
+                        
+                    
     
     #method to put em_loop if thread and start it on thread.
     def start_em_thread(self):
@@ -87,6 +107,7 @@ class Event_manager:
     def start_send_dataPLC(self):
         self.send_dataPLC_thread=threading.Thread(target=self.send_dataPLC)
         self.send_dataPLC_thread.start()
+        
         
             
         

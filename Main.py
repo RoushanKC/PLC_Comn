@@ -1,7 +1,6 @@
 import Connection
 import Dataclass
 import Event_manager
-import Data_maps
 import threading
 from Shared_data import Shared_data
 
@@ -15,9 +14,12 @@ if __name__=='__main__':
     conn=Connection.Connection(host ,port ,5740 ,2,1,sh)
     thread1=threading.Thread(target=conn.receive())
     thread1.start()
-    while True:
-        q=sh.update_queue.get()
-        console_data(q)
+    #while True:
+    #    q=sh.update_queue.get()
+    #    console_data(q)
+    core_engine=Dataclass.Data_class.getInstance()
+    em=Event_manager.Event_manager(core_engine ,conn ,sh)
+    em.start_em_thread()
     
     
     

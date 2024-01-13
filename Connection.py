@@ -55,6 +55,7 @@ class Connection(Packet):
     def decode(self ,dataP):
         parsed_data={}
         packet=dataP.data
+        parsed_data["dTimestamp"]=dataP.timestamp
         for items in receive_offset_map:
             addr=items["address"]
             addr=int(addr/8)
