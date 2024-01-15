@@ -2,8 +2,10 @@ import socket
 import time
 #import collections
 import struct
-#import queue
+import queue
+import threading
 from Data_maps import type_dict ,receive_offset_map ,send_offset_map,format_map
+from Shared_data import Shared_data
 
 # this is our abstraction of data buffer
 class Packet:
@@ -14,16 +16,16 @@ class Packet:
 # this class communicate with plc controller
 class Connection(Packet):
     #instantiation of connection class
-    def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate ,sh):
+    def __init__(self ,host ,port ,packet_size ,timeout ,refresh_rate):
         self.host=host
         self.port=port
         self.packet_size=packet_size
         self.timeout=timeout
         self.refresh_rate=refresh_rate
-        self.sh=sh
+        self.s_data=Shared_data.getInstance()
     
     # returns the packet
-    def return_packet(Packet):
+    def return_packet(self ,Packet):
         return Packet
     
     #establish a socket
@@ -115,7 +117,7 @@ class Connection(Packet):
         while True:
             try:
                 data=self.client.recv(self.packet_size)
-                print(len(data))
+                #print(len(data))
                 if not data:
                     print("log function implementation!")
                     self.client.close()
@@ -126,11 +128,15 @@ class Connection(Packet):
                     #data_class=Data_classes.Data_class(data_map)
                     #log
                     print(data_map)
-                    self.sh.notify_update_queue(data_map) #this is a callback to singleton Data_class class
+                    self.s_data.notify_queue(data_map) #this is a callback to singleton Data_class class
             except socket.timeout:
                 print("implement-log")
                 self.connection_handling(self)
-            time.sleep(self.refresh_rate)
+            #time.sleep(self.refresh_rate)
+    
+    def th_start(self):
+        threading.Thread(target=self.receive()).start()
+        
             
 #create function to run both receive and send on two different threads.
 

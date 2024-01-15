@@ -1,13 +1,24 @@
 import queue
+import threading
 
 class Shared_data:
     _instance=None
+    _lock=threading.Lock()
     def __new__(cls):
-        if not cls._instance:
-            cls._instance=super().__new__(cls)
-            cls._instance.update_queue=queue.Queue()
-        return cls._instance
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance=super().__new__(cls)
+            return cls._instance
     
-    def notify_update_queue(self ,data_map):
-        self.update_queue.put(data_map)
+    def __init__(self):
+        self.shared_queue=queue.Queue()
+    
+    @classmethod
+    def getInstance(cls):
+        return cls()
+   
+    def notify_queue(self ,data):
+        self.shared_queue.put(data)
+            
+
         

@@ -15,6 +15,7 @@ class Event_manager:
             cls.coreEngine=data_class
             cls.conn=connection
             cls.shared_data=sd
+            print("here")
         return cls._instance
     
     def __init__(self):
@@ -45,12 +46,11 @@ class Event_manager:
     #this method fetch dictionary from data_class as per offset provided.
     def fetch_DataClass(self ,offset_map):
         fetch_dict={}
-        dataclass=self.coreEngine.getInstance()
         for item in offset_map:
             key=item["name"]
             if(key=="raktDicke_Pos"):
                 break
-            _key ,val=dataclass.get_key_value(key)
+            _key ,val=self.coreEngine.get_key_value(key)
             if val==None:
                 continue
             fetch_dict[key]=val
@@ -78,7 +78,6 @@ class Event_manager:
                     
     #event manager loop ,publish data with enabled delta encoding.   
     def em_loop(self):
-        coreE=self.coreEngine.getInstance()
         #shared_data=Shared_data()
         while True:
             data_map=self.shared_data.update_queue.get()
@@ -86,13 +85,14 @@ class Event_manager:
                 if(key=="rAktDicke_Bolzen"):
                     data={key ,value}
                     self.publish(key ,data)
+                    print(data)
                 elif(key=="raktDicke_Pos"):
                     data={key ,value}
                     self.publish(key ,data)
                 else:
-                    _key ,_val=coreE.get_key_value(key)
+                    _key ,_val=self.coreEngine.get_key_value(key)
                     if (self._publish_all==True or value!=_val or _val==None):
-                        coreE.set_value(key ,value)
+                        self.coreEngine.set_value(key ,value)
                         data={key ,value}
                         self.publish(key ,data)
                         
@@ -100,6 +100,7 @@ class Event_manager:
     
     #method to put em_loop if thread and start it on thread.
     def start_em_thread(self):
+        print("asd")
         self.em_thread=threading.Thread(target=self.em_loop)
         self.em_thread.start()
     
