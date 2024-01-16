@@ -5,28 +5,29 @@ import threading
 import time
 import queue
 from Shared_data import Shared_data
+from Event_manager import Event_manager
+import concurrent.futures
 
-class Em:
-    def __init__(self):
-        self.s_data=Shared_data.getInstance()
+class Controller:
     
-    def publish(self):
-        while True:
-            try:
-                data=self.s_data.shared_queue.get(block=True)
-                print(data)
-            except queue.Empty:
-                time.sleep(0.5)
-    def start_th(self):
-        threading.Thread(target=self.publish()).start() 
+    def callback(self ,event ,data):
+        if event=="rAktDicke_Bolzen":
+            print(data)
+
     
 if __name__=='__main__':
     host='192.168.0.52'
     port=2000
     conn=Connection.Connection(host ,port ,5740 ,2,1)
-    em=Em()
-    conn.th_start()
-    em.start_th()
+    em=Event_manager()
+    ctr1=Controller()
+    sd=Shared_data.getInstance()
+    em.subscribe("rAktDicke_Bolzen" ,ctr1.callback)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
+        ex.submit(conn.receive)
+        ex.submit(em.em_loop)
+    
+    
    
     #core_engine=Dataclass.Data_class.getInstance()
     #em=Event_manager.Event_manager(core_engine ,conn ,sh)

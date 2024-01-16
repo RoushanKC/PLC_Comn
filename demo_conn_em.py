@@ -3,6 +3,7 @@ import threading
 import time
 import socket
 import struct
+import concurrent.futures
 from Data_maps import type_dict ,receive_offset_map ,format_map
 
 class Shared_data:
@@ -16,7 +17,7 @@ class Shared_data:
             return cls._instance
     
     def __init__(self):
-        self.shared_queue=queue.Queue()
+        self.shared_queue=queue.Queue(maxsize=5)
         
     @classmethod
     def getInstance(cls):
@@ -120,9 +121,9 @@ class Connection:
                 self.client.close()
                 
     def start_th(self):
-        threading.Thread(target=self.receive(), daemon=True).start()
+        threading.Thread(target=self.receive()).start()
                     
-        
+'''       
 class Em:
     def __init__(self):
         self.s_data=Shared_data.getInstance()
@@ -131,19 +132,78 @@ class Em:
         while True:
             try:
                 data=self.s_data.get_data()
+                print(data)
             except queue.Empty:
                 pass
             time.sleep(1)
                 
     def start_th(self):
-        threading.Thread(target=self.publish).start()
+        threading.Thread(target=self.publish()).start()
+'''
 
+class Event_manager:
+    _instance=None
+    _lock=threading.Lock()
+    _publish_all=True
+    _lock_sub=threading.Lock()
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance=super().__new__(cls)
+            return cls._instance
+    
+    def __init__(self):
+        self.event_callbacks={} #key=event ,value =list of callbacks
+        #self.coreEngine= Data_class.getInstance()
+        self.sd=Shared_data.getInstance()
+        
 
+    
+    def subscribe(self ,event ,callback):
+        with self._lock_sub:
+            if event not in self.event_callbacks:
+                self.event_callbacks[event]=[]
+            self.event_callbacks[event].append(callback)
+    
+    def unsubscribe(self ,event ,callback):
+        if event in self.event_callbacks:
+            self.event_callbacks[event].remove(callback)
+            print(f"callback removed")
+        if not self.event_callbacks[event]:
+            del self.event_callbacks[event]
+            print(f"event : {event} deleted")
+    
+    def publish(self ,event ,data):
+        if event in self.event_callbacks:
+            for callback in self.event_callbacks[event]:
+                callback(event ,data)
+        else :
+            print(f"cannot publish ,create event :{event} for the data ")
+            
+    def em_loop(self):
+        while True:
+            data_map=self.sd.get_data()
+            array_pos=data_map["raktDicke_Pos"]
+            print(len(array_pos))
+            self.publish("raktDicke_Pos" ,array_pos)
+            
+class Controller:
+    
+    def callback(self ,event ,data):
+        if event=="raktDicke_Pos":
+            print(data)
+   
 
 if __name__=='__main__':
     host='192.168.0.52'
     port=2000
     con=Connection(host ,port ,1 ,5740)
-    em=Em()
-    em.start_th()
-    con.start_th()
+    em=Event_manager()
+    #em.start_th()
+    #con.start_th()
+    ctrl=Controller()
+    em.subscribe("raktDicke_Pos" ,ctrl.callback)
+    with concurrent.futures.ThreadPoolExecutor(max_workers=2) as ex:
+        ex.submit(con.receive)
+        ex.submit(em.em_loop)
+    

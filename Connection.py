@@ -127,7 +127,7 @@ class Connection(Packet):
                     data_map=self.decode(packet)
                     #data_class=Data_classes.Data_class(data_map)
                     #log
-                    print(data_map)
+                    #print(data_map)
                     self.s_data.notify_queue(data_map) #this is a callback to singleton Data_class class
             except socket.timeout:
                 print("implement-log")

@@ -1,31 +1,33 @@
 import queue
 import threading
 from Data_maps import send_offset_map
+from Shared_data import Shared_data
+from Dataclass import Data_class
 
 
 class Event_manager:
     _instance=None
-    coreEngine=None
-    conn=None
-    shared_data=None
+    _lock=threading.Lock()
     _publish_all=True
-    def __new__(cls ,data_class ,connection ,sd):
-        if cls._instance is None:
-            cls._instance=super(Event_manager ,cls).__new__(cls)
-            cls.coreEngine=data_class
-            cls.conn=connection
-            cls.shared_data=sd
-            print("here")
-        return cls._instance
+    _lock_sub=threading.Lock()
+    def __new__(cls):
+        with cls._lock:
+            if cls._instance is None:
+                cls._instance=super().__new__(cls)
+            return cls._instance
     
     def __init__(self):
         self.event_callbacks={} #key=event ,value =list of callbacks
+        self.coreEngine= Data_class.getInstance()
+        self.sd=Shared_data.getInstance()
+        
 
     
     def subscribe(self ,event ,callback):
-        if event not in self.event_callbacks:
-            self.event_callbacks[event]=[]
-        self.event_callbacks[event].append(callback)
+        with self._lock_sub:
+            if event not in self.event_callbacks:
+                self.event_callbacks[event]=[]
+            self.event_callbacks[event].append(callback)
     
     def unsubscribe(self ,event ,callback):
         if event in self.event_callbacks:
@@ -66,21 +68,22 @@ class Event_manager:
     
     #this method send data to PLC ,it will check data in send_queue ,
     #wrap data as per current system state ,convert data to b stream and send it to PLC
-    def send_dataPLC(self):
+    def send_dataPLC(self ,conn):
         while True:
             data=self.send_queue.get()
             if data:
                 all_data=self.fetch_DataClass(send_offset_map)
                 for key ,val in data.items():
                     all_data[key]=val
-                b_stream=self.conn.encode(all_data)
-                self.conn.client.sendall(b_stream)
+                b_stream=conn.encode(all_data)
+                conn.client.sendall(b_stream)
                     
     #event manager loop ,publish data with enabled delta encoding.   
     def em_loop(self):
         #shared_data=Shared_data()
         while True:
-            data_map=self.shared_data.update_queue.get()
+            data_map=self.sd.fetch_queue()
+            print(data_map)
             for key ,value in data_map.items():
                 if(key=="rAktDicke_Bolzen"):
                     data={key ,value}
@@ -95,6 +98,7 @@ class Event_manager:
                         self.coreEngine.set_value(key ,value)
                         data={key ,value}
                         self.publish(key ,data)
+            self._publish_all=False
                         
                     
     
